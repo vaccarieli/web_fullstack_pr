@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const {Posts} = require("../models");
 
-router.use(express.json()); // Use json parser middleware to parse JSON data
-
 router.get("/", async (req, res) => {
     const postData = await Posts.findAll();
     res.json(postData);

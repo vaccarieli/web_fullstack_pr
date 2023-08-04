@@ -1,7 +1,11 @@
 const express = require("express");
 const app = express();
+const cors = require("cors");
 
 const db = require("./models");
+
+app.use(express.json()); // Use json parser middleware to parse JSON data
+app.use(cors()); // Use cors parser middleware to parse JSON data
 
 const postApp = require("./routes/Posts");
 
