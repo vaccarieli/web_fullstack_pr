@@ -3,6 +3,10 @@ const app = express();
 
 const db = require("./models");
 
+const postApp = require("./routes/Posts");
+
+app.use("/posts", postApp);
+
 PORT = 3001;
 db.sequelize.sync().then(() => {
     app.listen(PORT, () => {
