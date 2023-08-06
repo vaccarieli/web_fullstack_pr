@@ -1,14 +1,17 @@
 import "./App.css";
-import {BrowserRouter as Router, Route, Routes} from "react-router-dom";
+import {BrowserRouter as Router, Route, Routes, Link} from "react-router-dom";
 import Home from "./pages/Home";
-import About from "./pages/About";
+import CreatePost from "./pages/CreatePost";
 
 function App() {
     return (
         <div className="App">
             <Router>
+                <Link to="/">Main</Link>
+                <Link to="/createpost">Create A Post</Link>
                 <Routes>
                     <Route path="/" Component={Home} />
+                    <Route path="/createpost" Component={CreatePost} />
                 </Routes>
             </Router>
         </div>
