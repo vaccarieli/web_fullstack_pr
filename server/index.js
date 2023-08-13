@@ -10,6 +10,9 @@ app.use(cors()); // Use cors parser middleware to parse JSON data
 
 app.use("/images", express.static(path.join(__dirname, "/images")));
 
+const postCss = require("./routes/CSS");
+app.use("/css", postCss);
+
 const postApp = require("./routes/Posts");
 app.use("/posts", postApp);
 

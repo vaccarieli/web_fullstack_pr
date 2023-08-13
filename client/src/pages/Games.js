@@ -17,6 +17,10 @@ function Games() {
             });
     }, []);
 
+    const open_youtube = (video_id) => {
+        window.open(video_id, "_blank"); // Open YouTube link in a new tab
+    };
+
     return (
         <div>
             {listOfPosts.map((value, index) => {
@@ -26,7 +30,12 @@ function Games() {
                             <div className="title">{value.title}</div>
                         </div>
                         <div className="outer-postText-box">
-                            <img className="profile-photo" src={`${server_url}${value.image_url}`} alt={"RedDead"} />
+                            <img
+                                className="profile-photo"
+                                onClick={() => open_youtube(value.youtube_url)}
+                                src={`${server_url}${value.image_url}`}
+                                alt={"RedDead"}
+                            />
                         </div>
                         <div className="username">{value.username}</div>
                     </div>
