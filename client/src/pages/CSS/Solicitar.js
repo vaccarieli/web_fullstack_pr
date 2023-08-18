@@ -1,45 +1,16 @@
 import React, {useState} from "react";
-const form_data = {
-    aseg_cedula: null,
-    aseg_nombre: null,
-    bene_cedula: null,
-    bene_nombre: null,
-    edad: null,
-    total: null,
-    tel_cel: null,
-    tel_res: null,
-    correo: null,
-    direccion: null,
-    cod_ue: null,
-    cod_espe: null,
-    cod_horario: null,
-    cita_es: null,
-    cod_medico: null,
-    guardar: "SOLICITAR CITA",
-};
+import {useLocation, useNavigate} from "react-router-dom";
+import axios from "axios";
 
 const MultiOptionDropdown = () => {
     const [selectedOptions, setSelectedOptions] = useState([]);
+    const {state} = useLocation();
+    const [isLoading, setIsLoading] = useState(false);
 
-    const policlinicas = [
-        "Policlínica Generoso Guardia (Santa Librada)",
-        "Policlínica Manuel Ferrer Valdes (Calle 25)",
-        "Policlínica Manuel Maria Valdes (San Miguelito)",
-        "Policlínica Alejandro De La Guardia Hijo (Bethania)",
-        "Policlínica Joaquin Jose Vallarino (Juan Diaz)",
-        "Policlínica Carlos N Brin (San Francisco)",
-        "Policlinica Presidente Remon (Calle 17)",
-        "Policlínica Nuevo San Juan (Colón, NSJ)",
-        "Policlínica Especializada Dr. Hugo Spadafora (Colón, HS)",
-        "Policlínica Especializada de Sabanitas (Colón, Sabanitas)",
-        "Hospital Raúl Dávila Mena (Hospital Changuinola)",
-        "Policlínica Santiago Barraza (La Chorrera)",
-        "Policlinica Especializada Dr. Miguel Cardenas Barahona(Las Tablas)",
-        "Policlínica Dr. Blas D. Gómez Ch. (Arraijan)",
-        "Policlínica San Juan de Dios (Los Santos)",
-        "Policlínica Juan Vega Mendez (San Carlos)",
-        "Policlínica de Cañitas(Cañita)",
-    ];
+    const navigate = useNavigate();
+
+    const server_url = "http://localhost:3001/";
+
     const specialties = {
         8: "Cirugía General",
         9: "Dermatología",
@@ -67,9 +38,21 @@ const MultiOptionDropdown = () => {
     const handleOptionChange = (event) => {
         Array.from(event.target.selectedOptions).reduce((obj, option) => {
             setSelectedOptions(option.value);
-            form_data[option.id] = option.value;
-            console.log(form_data);
+            state.form_data[option.id] = option.value;
+            return 1;
         }, []);
+    };
+
+    const submit_data = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        const response = await axios.post(`${server_url}css/solicitar`, {
+            params: {form_data: state.form_data, headers: state.headers},
+        });
+
+        setIsLoading(false);
+        navigate("/solicitud", {state: response.data});
     };
 
     return (
@@ -78,9 +61,9 @@ const MultiOptionDropdown = () => {
             <div>
                 <h2>Seleccione la Policlínica</h2>
                 <select multiple onChange={handleOptionChange}>
-                    {policlinicas.map((option, index) => (
+                    {Object.keys(state.policlinicas).map((option, index) => (
                         <option value={index + 1} id="cod_ue">
-                            {option}
+                            {state.policlinicas[option]}
                         </option>
                     ))}
                 </select>
@@ -121,6 +104,10 @@ const MultiOptionDropdown = () => {
                     })}
                 </select>
             </div>
+            <br></br>
+            <form onSubmit={submit_data}>
+                <button disabled={isLoading}>{isLoading ? "Loading..." : "Submit"}</button>
+            </form>
         </div>
     );
 };

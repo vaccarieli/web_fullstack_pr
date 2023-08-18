@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 const qs = require("qs");
-const cheerio = require("cheerio");
+const {load} = require("cheerio");
 
 let specs_added = {
     9: "Dermatología - **[Altered]**",
@@ -118,7 +118,7 @@ const validate_right = async (pacient_info) => {
     const response = await axios.post(urls.base_url + urls.validaDerechoUrl, qs.stringify(pacient_info), {
         headers: headers,
     });
-    const $ = cheerio.load(response.data);
+    const $ = load(response.data);
 
     const inputs = $("input");
     const textarea = $("textarea").text();
@@ -133,6 +133,7 @@ const validate_right = async (pacient_info) => {
     form_data = Object.assign({}, form_data, inputAttributes);
 
     form_data["direccion"] = textarea;
+    delete form_data.cita_es;
     delete form_data.cod_medico;
     delete form_data.cdigital;
     delete form_data.cancelar;
@@ -150,10 +151,10 @@ const validate_right = async (pacient_info) => {
     return policlinicas;
 };
 
-const select_specialty = async (clinic_option = "1") => {
+const select_specialty = async (clinic_option = "1", headers) => {
     const params = {select: "cod_espe", opcion: clinic_option};
     const response = await axios.get(urls.base_url + urls.selectEspeUrl, {params: params, headers: headers});
-    const $ = cheerio.load(response.data);
+    const $ = load(response.data);
     const available_specialties = $("option")
         .get()
         .reduce((empty_obj, element) => {
@@ -170,7 +171,7 @@ const select_specialty = async (clinic_option = "1") => {
 const get_list_drs = async (specialty_option = "2") => {
     const params = {select: "cod_medico", opcion: specialty_option};
     const response = await axios.get(urls.base_url + urls.selectEspeUrl, {params: params, headers: headers});
-    const $ = cheerio.load(response.data);
+    const $ = load(response.data);
     const list_of_drs = $("option")
         .get()
         .reduce((empty_dict, element) => {
@@ -184,7 +185,7 @@ const get_list_drs = async (specialty_option = "2") => {
 };
 
 const extrac_message = (html) => {
-    const $ = cheerio.load(html);
+    const $ = load(html);
     // Select the <p> element containing the message
     const messageElement = $("p").eq(1); // Adjust the index as needed
 
@@ -192,45 +193,43 @@ const extrac_message = (html) => {
     return messageElement.text().trim();
 };
 
-const request_appointment = async () => {
+const request_appointment = async (form_data, headers) => {
     const response = await axios.post(urls.base_url + urls.indexSolCitaAgUrl, qs.stringify(form_data), {
         headers: headers,
     });
 
+    console.log(response.data);
+
     return extrac_message(response.data);
 };
 
-router.get("/", async (req, res) => {
+router.get("/consultar", async (req, res) => {
     // add initial cookies by default randomly generated in each request to "preserve session" during the sequence of each url visited
     headers["cookie"] = `PHPSESSID=${generateRandomString(80)}`;
 
-    console.log(req.query);
-
-    // request and get the policlinicas available.
+    form_data.aseg_cedula = req.query.id_doc;
+    form_data.dia = req.query.dia;
+    form_data.mes = req.query.mes;
+    form_data.anio = req.query.anio;
     const policlinicas = await validate_right(req.query);
 
-    // console.log(policlinicas);
-    const clinic_option = "6";
-    form_data["cod_ue"] = clinic_option;
+    res.json({headers: headers, form_data: form_data, policlinicas: policlinicas});
+});
 
-    // request and get the list of available specialties
-    const list_of_specialties = await select_specialty(clinic_option);
+router.post("/solicitar", async (req, res) => {
+    const headers = req.body.params.headers;
+    const form_data = req.body.params.form_data;
+
+    // await select_specialty(form_data.cod_ue, headers);
     //  later select the specialty and *** save that option number to a variable, to pass it as argument in select_specialty ****
-    const specialty_option = "54";
-    form_data["cod_espe"] = specialty_option;
+    // if (form_data["cita_es"] == "control") {
+    //     // request and get the list of available drs (Optional: Only works if you had an appointment before.).
+    //     const list_of_drs = await get_list_drs();
+    // }
 
-    // Select the preference for attention!
-    form_data["cod_horario"] = schedule_pref[1];
+    const message_response = await request_appointment(form_data, headers);
 
-    form_data["cita_es"] = appointent_type[1];
-
-    if (form_data["cita_es"] == "control") {
-        // request and get the list of available drs (Optional: Only works if you had an appointment before.).
-        const list_of_drs = await get_list_drs();
-    }
-    // const message_response = await request_appointment();
-
-    res.json(form_data);
+    res.send(message_response);
 });
 
 module.exports = router;
